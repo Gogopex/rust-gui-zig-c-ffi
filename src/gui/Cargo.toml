@@ -1,0 +1,21 @@
+[package]
+name = "gui"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+# eframe = "0.28.1"
+gpui = { git = "https://github.com/zed-industries/zed" }
+
+[build-dependencies]
+bindgen = "0.69.4"
+
+[profile.dev]
+debug = 0
+
+[profile.release]
+debug = 0
