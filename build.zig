@@ -51,7 +51,6 @@ pub fn build(b: *std.Build) !void {
     exe.addObjectFile(libgui_path);
     exe.addIncludePath(b.path("src/gui"));
 
-    // Add frameworks and libraries
     const frameworks = [_][]const u8{
         "ApplicationServices", "CoreFoundation", "CoreVideo",  "CoreText",   "Security",
         "CoreGraphics",        "AppKit",         "QuartzCore", "Foundation", "IOSurface",
