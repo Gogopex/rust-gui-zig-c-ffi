@@ -1,8 +1,8 @@
 const std = @import("std");
 
-fn setup_rust_gui(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !std.Build.LazyPath {
+fn setup_rust_gui(b: *std.Build, optimize: std.builtin.OptimizeMode) !std.Build.LazyPath {
     const tool_run = b.addSystemCommand(&.{"cargo"});
-    tool_run.setCwd(b.path("src/gui"));
+    tool_run.setCwd(b.path("src/gui/src"));
     tool_run.addArgs(&.{
         "build",
     });
@@ -18,13 +18,6 @@ fn setup_rust_gui(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std
         .Debug => {
             opt_path = "debug";
         },
-    }
-
-    // Add target-specific arguments
-    if (target.result.os.tag == .macos) {
-        tool_run.addArgs(&.{ "--target", "aarch64-apple-darwin" });
-    } else {
-        @panic("Unsupported target");
     }
 
     const generated = try b.allocator.create(std.Build.GeneratedFile);
@@ -47,39 +40,26 @@ pub fn build(b: *std.Build) !void {
         .optimize = opt,
     });
 
-    const libgui_path = try setup_rust_gui(b, target, opt);
-    exe.addObjectFile(libgui_path);
+    const libgui_path = try setup_rust_gui(b, opt);
+    exe.addLibraryPath(libgui_path.dirname());
+    exe.linkSystemLibrary("gui");
+
     exe.addIncludePath(b.path("src/gui"));
 
-    const frameworks = [_][]const u8{
-        "ApplicationServices", "CoreFoundation", "CoreVideo",  "CoreText",   "Security",
-        "CoreGraphics",        "AppKit",         "QuartzCore", "Foundation", "IOSurface",
-        "CoreMedia",           "VideoToolbox",   "Metal",
-    };
-    for (frameworks) |framework| {
-        exe.linkFramework(framework);
-    }
-
-    exe.linkSystemLibrary("System");
-    exe.linkSystemLibrary("objc");
-    exe.linkSystemLibrary("curl");
-    exe.linkSystemLibrary("iconv");
-    exe.linkSystemLibrary("c");
-    exe.linkSystemLibrary("m");
+    // @TODO: condition these out if taget is not osx
+    exe.linkFramework("CoreFoundation");
+    exe.linkFramework("CoreGraphics");
+    exe.linkFramework("Foundation");
+    exe.linkFramework("AppKit");
+    exe.linkFramework("CoreServices");
+    exe.linkFramework("Carbon");
+    exe.linkFramework("IOKit");
+    exe.linkFramework("CoreVideo");
+    exe.linkFramework("Metal");
+    exe.linkFramework("QuartzCore");
+    exe.linkFramework("OpenGL");
 
     exe.linkLibC();
     exe.linkLibCpp();
-
-    // yolo linker flags
-    exe.addLibraryPath(.{ .cwd_relative = "/usr/lib" });
-    exe.addLibraryPath(.{ .cwd_relative = "/usr/local/lib" });
-    exe.addIncludePath(.{ .cwd_relative = "/usr/include" });
-    exe.addIncludePath(.{ .cwd_relative = "/usr/local/include" });
-
-    // trying to make sure all symbols are exported
-    exe.linkage = .dynamic;
-    exe.bundle_compiler_rt = true;
-    exe.want_lto = false;
-
     b.installArtifact(exe);
 }

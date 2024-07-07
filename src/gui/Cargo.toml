@@ -8,8 +8,7 @@ publish = false
 crate-type = ["staticlib"]
 
 [dependencies]
-# eframe = "0.28.1"
-gpui = { git = "https://github.com/zed-industries/zed" }
+eframe = "0.28.1"
 
 [build-dependencies]
 bindgen = "0.69.4"
